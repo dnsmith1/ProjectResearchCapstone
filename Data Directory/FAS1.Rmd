@@ -1,0 +1,96 @@
+---
+title: "FAS"
+output: html_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+The first step is to read in the data.
+
+```{r}
+dat<-read.csv("Fasproject.csv")
+
+```
+
+The next step is to check out the structure
+
+```{r}
+str(dat)
+```
+
+I need to change the scores to numeric and subject to a factor.
+
+```{r}
+dat$scores<-as.numeric(dat$scores)
+dat$subject<-as.factor(dat$subject)
+str(dat)
+```
+
+
+2-way ANOVA between subjects to determine if there is an effect of and interactions between viewing the video and FAS scores (inital and second).
+
+```{r}
+summary(aov(scores~video*survey, data=dat))
+```
+
+There was no main effect of viewing the video upon the FAS scores, F(1) = .861, p = .362.  There was no main effect of the time of the survey upon the FAS scores, F(1) = .128,
+p = .724.  There was no interaction of the viewing of the video and time of the survey upon the FAS scores,  F(1) = .012, p = .914.
+
+
+Now to create a bar graph to show the means of the initial and second scores according to whether or not the subjects viewed the video.
+
+```{r}
+library(ggplot2)
+library(gplots)
+library(dplyr)
+
+
+temp<-dat%>%group_by(video,survey)%>%
+  summarize(means=mean(scores),
+            sems=sd(scores)/sqrt(length(n)))
+
+```
+
+```{r}
+f<-ggplot(temp, aes(x=video,
+                    y=means,
+                    fill=survey))+
+  geom_bar(stat="identity",position=position_dodge())+
+  scale_fill_manual(values=c("purple","darkblue"),
+                     name="Survey",
+                     breaks=c("initial","second"),
+                     labels=c("Initial", "Second"))+
+  geom_errorbar(aes(ymax=means+sems,
+                    ymin=means-sems),
+                width=.2,
+                position=position_dodge(.9))+
+  ggtitle("Mean FAS Scores")+
+  labs(x="Viewed Video",y="Mean Scores")+
+  theme(plot.title=element_text(size=15,face="bold",vjust=.5))+
+  theme(axis.title.x=element_text(size=12,face="bold",vjust=-.25))+
+  theme(axis.title.y=element_text(size=12,face="bold",vjust=1))+
+  theme(axis.text.x=element_text(size=10,face="bold",color="black"))+
+  theme(axis.text.y=element_text(size=10,face="bold",color="black"))+
+  coord_cartesian(ylim=c(min(temp$means)-2*max(temp$sems),
+                         max(temp$means)+2*max(temp$sems)))+
+  theme(panel.border=element_blank(),axis.line=element_line())+
+  theme(panel.grid.major.x=element_blank())+
+  theme(panel.grid.major.y=element_line(color="darkgrey"))+
+  theme(panel.grid.minor.y=element_blank())+
+  theme(legend.position=c(.4,.8))+
+  theme(legend.background=element_blank())+
+  theme(legend.background=element_rect(color="black"))+
+  theme(legend.title=element_blank())+
+  theme(legend.title=element_text(size=12))+
+  theme(legend.title.align=.5)+
+  theme(legend.text=element_text(size=10,face="bold"))
+f
+```
+
+
+
